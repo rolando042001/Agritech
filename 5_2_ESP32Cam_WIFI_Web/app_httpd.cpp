@@ -321,15 +321,15 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         // ===== BLOWER FAN =====
     else if(!strcmp(variable, "blower"))
 {
-    txdata[1] = blower_fan;
+  //  txdata[1] = blower_fan;
 
     if(val == 16){             
-        txdata[2] = Blower_ON_Value;
+        txdata[1] = Blower_ON_Value;
         Serial.write(txdata, 4);
         Serial.println("Blower On");
     }
     else if(val == 0){
-        txdata[2] = Blower_OFF_Value;
+        txdata[1] = Blower_OFF_Value;
         Serial.write(txdata, 4);
         Serial.println("Blower Off");
     }
