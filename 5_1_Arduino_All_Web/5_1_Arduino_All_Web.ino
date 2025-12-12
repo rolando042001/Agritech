@@ -9,17 +9,11 @@ AF_DCMotor motorFR(2, MOTOR34_8KHZ);   // Front Right
 AF_DCMotor motorBL(3, MOTOR34_8KHZ);   // Back Left
 AF_DCMotor motorBR(4, MOTOR34_8KHZ);   // Back Right
 
-
-// ======== SHARP IR SETUP ======== //
-#define IR_FL A1
-#define IR_FR A2
-#define model 1080   // GP2Y0A21YK0F model code
-
-// #define IR_BL A2
-// #define IR_BR A3
-
-SharpIR SharpIR_FL(IR_FL, model);
-SharpIR SharpIR_FR(IR_FR, model);
+// ===== IR PINS =====
+#define IR_FL A0
+#define IR_FR A1
+#define IR_BL A2
+#define IR_BR A3
 
 // ======= ULTRASONIC =======
 // #define Trig_PIN 12
@@ -54,8 +48,6 @@ const int Servo_dolly     = 41;   // dolly servo
 const int Actuator_up     = 225;  // actuator extend
 const int Actuator_down   = 226;  // actuator retract
 const int Blower_fan      = 227 ;  // blower fan
-
-int safeDistance = 20;  // cm threshold
 
 
 // ======= SERVO PINS =======
@@ -171,35 +163,48 @@ void model1_func(byte values) {
 void model2_func() {
   while (model_var == 1) {
 
-    RXpack_func(); // keep receiving commands
+    RXpack_func();
     if (model_var != 1) break;
 
-    // Read FRONT IR sensors (SharpIR)
-    float FL = SharpIR_FL.distance();
-    float FR = SharpIR_FR.distance();
+    // Read FRONT IR sensors
+    float FL = getIRdistanceCM(IR_FL);
+    float FR = getIRdistanceCM(IR_FR);
 
-    // Use backMin as "safe" for back checks if you want (optional)
-    bool frontBlocked = (FL < safeDistance || FR < safeDistance);
+    // Read BACK IR sensors
+    float BL = getIRdistanceCM(IR_BL);
+    float BR = getIRdistanceCM(IR_BR);
+
+    float frontMin = min(FL, FR);
+    float backMin  = min(BL, BR);
+
+    bool frontBlocked = (frontMin < 25);
+    bool backBlocked  = (backMin  < 25);
 
     Serial.print("FL: "); Serial.print(FL);
-    Serial.print("  FR: "); Serial.println(FR);
+    Serial.print("  FR: "); Serial.print(FR);
+    Serial.print("  BL: "); Serial.print(BL);
+    Serial.print("  BR: "); Serial.println(BR);
 
     // ------------------------------------------
     // FRONT BLOCKED → Avoid
     // ------------------------------------------
     if (frontBlocked) {
+
       Motor(Stop, 0);
       delay(120);
 
-      // Reverse slightly if possible
-      Motor(Backward, speeds - 60);
-      delay(300);
+      // If back is CLEAR → reverse slightly
+      if (!backBlocked) {
+        Motor(Backward, speeds - 60);
+        delay(300);
+      }
 
-      // Choose turn direction based on difference
+      // Choose turn direction
       float diffFront = FL - FR;
 
       // dead-zone: avoid bias (fix continuous CCW rotation)
       if (abs(diffFront) < 5) {
+        // go straight backward briefly to re-center
         Motor(Backward, speeds - 60);
         delay(200);
         continue;
@@ -211,6 +216,15 @@ void model2_func() {
         Motor(Clockwise, speeds);     // turn RIGHT
       }
 
+      delay(300);
+      continue;
+    }
+
+    // ------------------------------------------
+    // BACK BLOCKED → Move Forward
+    // ------------------------------------------
+    if (backBlocked) {
+      Motor(Forward, speeds - 60);
       delay(300);
       continue;
     }
