@@ -318,36 +318,22 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         Serial.write(txdata,4);
     }
 
-        // ===== BLOWER FAN =====
-    else if(!strcmp(variable, "blower"))
+// ===== BLOWER FAN =====
+else if(!strcmp(variable, "blower"))
 {
-  //  txdata[1] = blower_fan;
+    txdata[1] = blower_fan; 
 
-    if(val == 16){             
-        txdata[1] = Blower_ON_Value;
+    if(val == 16){         // ON
+        txdata[2] = 1;
         Serial.write(txdata, 4);
-        Serial.println("Blower On");
+        Serial.println("Blower ON");
     }
-    else if(val == 0){
-        txdata[1] = Blower_OFF_Value;
+    else if(val == 0){     // OFF
+        txdata[2] = 0;
         Serial.write(txdata, 4);
-        Serial.println("Blower Off");
+        Serial.println("Blower OFF");
     }
 }
-
-//     else if(!strcmp(variable, "blower"))
-// {
-//     if(val == 16){ // UP
-//         txdata[1] = Blower_ON_Value;
-//         txdata[2] = 1;
-//         Serial.write(txdata, 4);
-//     }
-//     else if(val == 0){ // DOWN
-//         txdata[1] = Blower_OFF_Value;
-//         txdata[2] = 1;
-//         Serial.write(txdata, 4);
-//     }
-// }
 
     else if(!strcmp(variable, "actuator"))
 {
