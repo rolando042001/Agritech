@@ -756,23 +756,20 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <!-- ====== BLOWER FAN CONTROL ====== -->
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
-            <button onclick="toggleBlower(1)">BLOWER ON</button>
-                style="width:120px;height:40px;background:#44c767;">Turn ON</button>
-
-            <button onclick="toggleBlower(0)">BLOWER OFF</button>
-                style="width:120px;height:40px;background:#e94a4a;">Turn OFF</button>
+                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=1');}catch(e){}">Turn ON</button>
+                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=0');}catch(e){}">Turn ON</button>
         </div>
-
 
 
         <!-- ACTUATOR -->
         <div class="cont_flex">  
             <div style="display:flex;align-items:center;">
                 ACTUATOR
-                <button onclick="toggleActuator(1)">DEPLOY</button>
-                <button onclick="toggleActuator(2)">RETRACT</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=actuator&val=1');}catch(e){}">DEPLOY</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=actuator&val=2');}catch(e){}">RETRACT</button>
             </div>
         </div>
+
 
 
         
@@ -819,9 +816,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
                 ctx.clearRect(50,85,100,20);
 
                 let actuatorState = 0; // 0=stop, 1=deploy, 2=retract
-
-let actuatorState = 0;
-let blowerState = 0;
+                let blowerState = 0;
 
 function toggleActuator(command){
     if(actuatorState===command){ actuatorState=0; fetch(`/control?var=actuator&val=0`); console.log("Actuator STOP"); return;}
