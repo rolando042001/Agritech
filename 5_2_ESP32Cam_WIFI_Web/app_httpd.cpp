@@ -319,35 +319,35 @@ static esp_err_t cmd_handler(httpd_req_t *req)
     }
 
         // ===== BLOWER FAN =====
-//     else if(!strcmp(variable, "blower"))
-// {
-//     txdata[1] = blower_fan;
-
-//     if(val == 16){             
-//         txdata[2] = Blower_ON_Value;
-//         Serial.write(txdata, 4);
-//         Serial.println("Blower On");
-//     }
-//     else if(val == 17){
-//         txdata[2] = Blower_OFF_Value;
-//         Serial.write(txdata, 4);
-//         Serial.println("Blower Off");
-//     }
-// }
-
     else if(!strcmp(variable, "blower"))
 {
-    if(val == 16){ // UP
-        txdata[1] = Blower_ON_Value;
-        txdata[2] = 1;
+    txdata[1] = blower_fan;
+
+    if(val == 16){             
+        txdata[2] = Blower_ON_Value;
         Serial.write(txdata, 4);
+        Serial.println("Blower On");
     }
-    else if(val == 1){ // DOWN
-        txdata[1] = Blower_OFF_Value;
-        txdata[2] = 1;
+    else if(val == 0){
+        txdata[2] = Blower_OFF_Value;
         Serial.write(txdata, 4);
+        Serial.println("Blower Off");
     }
 }
+
+//     else if(!strcmp(variable, "blower"))
+// {
+//     if(val == 16){ // UP
+//         txdata[1] = Blower_ON_Value;
+//         txdata[2] = 1;
+//         Serial.write(txdata, 4);
+//     }
+//     else if(val == 0){ // DOWN
+//         txdata[1] = Blower_OFF_Value;
+//         txdata[2] = 1;
+//         Serial.write(txdata, 4);
+//     }
+// }
 
     else if(!strcmp(variable, "actuator"))
 {
@@ -775,7 +775,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=16');}catch(e){}">Turn ON</button>
-                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=1');}catch(e){}">Turn Off</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=0');}catch(e){}">Turn Off</button>
         </div>
 
 
