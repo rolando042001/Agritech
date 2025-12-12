@@ -323,12 +323,12 @@ static esp_err_t cmd_handler(httpd_req_t *req)
 {
     txdata[1] = blower_fan;
 
-    if(val == 1){             
+    if(val == 16){             
         txdata[2] = Blower_ON_Value;
         Serial.write(txdata, 4);
         Serial.println("Blower On");
     }
-    else if(val == 0){
+    else if(val == 17){
         txdata[2] = Blower_OFF_Value;
         Serial.write(txdata, 4);
         Serial.println("Blower Off");
@@ -760,11 +760,8 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <!-- ====== BLOWER FAN CONTROL ====== -->
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
-            <button onclick="fetch('/control?var=blower&val=1')"
-                style="width:120px;height:40px;background:#44c767;">Turn ON</button>
-
-            <button onclick="fetch('/control?var=blower&val=0')"
-                style="width:120px;height:40px;background:#e94a4a;">Turn OFF</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=16');}catch(e){}">Turn ON</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=17');}catch(e){}">Turn Off</button>
         </div>
 
 
@@ -823,6 +820,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
                 ctx.clearRect(50,85,100,20);
 
                 let actuatorState = 0; // 0=stop, 1=deploy, 2=retract
+                let blowerState = 0;
 
 function toggleActuator(command){
     
