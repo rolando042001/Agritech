@@ -132,6 +132,9 @@ static esp_err_t capture_handler(httpd_req_t *req){
     return res;
 }
 
+static int actuatorState = 0; // 0=stop, 1=up, 2=down
+static int blowerState = 0;   // 0=off, 1=on
+
 static esp_err_t stream_handler(httpd_req_t *req){
     camera_fb_t * fb = NULL;
     esp_err_t res = ESP_OK;
@@ -312,49 +315,40 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         Serial.write(txdata,4);
     }
 
-// ===== BLOWER FAN =====
-else if(!strcmp(variable, "blower"))
-{
-    txdata[1] = blower_fan;  // command ID
-
-    if(val == 1){            // ON
-        txdata[2] = 1;
-        Serial.write(txdata, 4);
-        Serial.println("Blower: ON");
+// ====== BLOWER CONTROL ======
+    if(!strcmp(variable,"blower")){
+        if(val==1){
+            if(actuatorState != 0){ // stop actuator first
+                actuatorState=0;
+                txdata[1]=Actuator_up; txdata[2]=0; Serial.write(txdata,4); Serial.println("Actuator STOP due to blower ON");
+            }
+            blowerState=1;
+            txdata[1]=blower_fan; txdata[2]=1; Serial.write(txdata,4); Serial.println("Blower ON");
+        } else {
+            blowerState=0;
+            txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF");
+        }
     }
-    else {                   // OFF (val == 0)
-        txdata[2] = 0;
-        Serial.write(txdata, 4);
-        Serial.println("Blower: OFF");
+    // ====== ACTUATOR CONTROL ======
+    else if(!strcmp(variable,"actuator")){
+        if(val==1){ // deploy
+            if(blowerState==1){ // stop blower first
+                blowerState=0;
+                txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF due to actuator");
+            }
+            actuatorState=1;
+            txdata[1]=Actuator_up; txdata[2]=1; Serial.write(txdata,4); Serial.println("Actuator UP");
+        }
+        else if(val==2){ // retract
+            if(blowerState==1){ blowerState=0; txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF due to actuator"); }
+            actuatorState=2;
+            txdata[1]=Actuator_down; txdata[2]=1; Serial.write(txdata,4); Serial.println("Actuator DOWN");
+        }
+        else if(val==0){ // stop
+            txdata[1]=Actuator_up; txdata[2]=0; Serial.write(txdata,4); Serial.println("Actuator STOP");
+            actuatorState=0;
+        }
     }
-}
-  
-// ===== ACTUATOR =====
-else if(!strcmp(variable, "actuator"))
-{
-    if(val == 1)
-    {
-        txdata[1] = Actuator_up;   // UP command
-        txdata[2] = 1;
-        Serial.write(txdata, 4);
-        Serial.println("Actuator: UP");
-    }
-    else if(val == 2)
-    {
-        txdata[1] = Actuator_down; // DOWN command
-        txdata[2] = 1;
-        Serial.write(txdata, 4);
-        Serial.println("Actuator: DOWN");
-    }
-    else if(val == 0)
-    {
-        // STOP should NEVER set txdata[1] = 0 (breaks protocol!)
-        txdata[1] = Actuator_up;   // or Actuator_down (same STOP logic)
-        txdata[2] = 0;
-        Serial.write(txdata, 4);
-        Serial.println("Actuator: STOP");
-    }
-}
 
 
 
@@ -762,10 +756,10 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <!-- ====== BLOWER FAN CONTROL ====== -->
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
-            <button onclick="fetch('/control?var=blower&val=1')"
+            <button onclick="toggleBlower(1)">BLOWER ON</button>
                 style="width:120px;height:40px;background:#44c767;">Turn ON</button>
 
-            <button onclick="fetch('/control?var=blower&val=0')"
+            <button onclick="toggleBlower(0)">BLOWER OFF</button>
                 style="width:120px;height:40px;background:#e94a4a;">Turn OFF</button>
         </div>
 
@@ -775,8 +769,8 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <div class="cont_flex">  
             <div style="display:flex;align-items:center;">
                 ACTUATOR
-                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=actuator&val=1');}catch(e){}">DEPLOY</button>
-                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=actuator&val=2');}catch(e){}">RETRACT</button>
+                <button onclick="toggleActuator(1)">DEPLOY</button>
+                <button onclick="toggleActuator(2)">RETRACT</button>
             </div>
         </div>
 
@@ -826,41 +820,21 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 
                 let actuatorState = 0; // 0=stop, 1=deploy, 2=retract
 
+let actuatorState = 0;
+let blowerState = 0;
+
 function toggleActuator(command){
-    
-    // If same command pressed again → STOP
-    if (actuatorState === command) {
-        actuatorState = 0;
-        fetch(`/control?var=actuator&val=0`);
-        console.log("Actuator STOP");
-        return;
-    }
-
-    // Otherwise send new command
-    actuatorState = command;
+    if(actuatorState===command){ actuatorState=0; fetch(`/control?var=actuator&val=0`); console.log("Actuator STOP"); return;}
+    if(blowerState===1){ blowerState=0; fetch(`/control?var=blower&val=0`); console.log("Blower OFF due to actuator");}
+    actuatorState=command;
     fetch(`/control?var=actuator&val=${command}`);
-
-    if(command === 1) console.log("Actuator DEPLOY");
-    if(command === 2) console.log("Actuator RETRACT");
 }
 
-
 function toggleBlower(command){
-    
-    // If same command pressed again → STOP
-    if (blowerState === command) {
-        blowerState = 0;
-        fetch(`/control?var=blower&val=0`);
-        console.log("Actuator STOP");
-        return;
-    }
-
-    // Otherwise send new command
-    blowerState = command;
+    if(blowerState===command){ blowerState=0; fetch(`/control?var=blower&val=0`); console.log("Blower STOP"); return;}
+    if(actuatorState!==0){ actuatorState=0; fetch(`/control?var=actuator&val=0`); console.log("Actuator STOP due to blower");}
+    blowerState=command;
     fetch(`/control?var=blower&val=${command}`);
-
-    if(command === 1) console.log("Blower On");
-    if(command === 2) console.log("Blower Off");
 }
 
 // PAN & TILT SLIDERS
