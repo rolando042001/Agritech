@@ -319,31 +319,31 @@ static esp_err_t cmd_handler(httpd_req_t *req)
     }
 
         // ===== BLOWER FAN =====
-    else if(!strcmp(variable, "blower"))
-{
-    txdata[1] = blower_fan;
+//     else if(!strcmp(variable, "blower"))
+// {
+//     txdata[1] = blower_fan;
 
-    if(val == 16){             
-        txdata[2] = Blower_ON_Value;
-        Serial.write(txdata, 4);
-        Serial.println("Blower On");
-    }
-    else if(val == 17){
-        txdata[2] = Blower_OFF_Value;
-        Serial.write(txdata, 4);
-        Serial.println("Blower Off");
-    }
-}
+//     if(val == 16){             
+//         txdata[2] = Blower_ON_Value;
+//         Serial.write(txdata, 4);
+//         Serial.println("Blower On");
+//     }
+//     else if(val == 17){
+//         txdata[2] = Blower_OFF_Value;
+//         Serial.write(txdata, 4);
+//         Serial.println("Blower Off");
+//     }
+// }
 
     else if(!strcmp(variable, "blower"))
 {
     if(val == 16){ // UP
-        txdata[1] = blower_on;
+        txdata[1] = Blower_ON_Value;
         txdata[2] = 1;
         Serial.write(txdata, 4);
     }
     else if(val == 1){ // DOWN
-        txdata[1] = blower_off;
+        txdata[1] = Blower_OFF_Value;
         txdata[2] = 1;
         Serial.write(txdata, 4);
     }
