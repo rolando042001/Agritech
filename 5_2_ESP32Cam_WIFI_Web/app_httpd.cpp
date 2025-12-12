@@ -35,6 +35,12 @@ const int Actuator_up     = 225;
 const int Actuator_down   = 226;
 const int blower_fan      = 227;  
 
+const int Blower_ON_Value  = 10;
+const int Blower_OFF_Value = 11;
+
+const int Actuator_Stop_Value = 20;
+
+
 
 
 typedef struct {
@@ -131,9 +137,6 @@ static esp_err_t capture_handler(httpd_req_t *req){
     int64_t fr_end = esp_timer_get_time();
     return res;
 }
-
-static int actuatorState = 0; // 0=stop, 1=up, 2=down
-static int blowerState = 0;   // 0=off, 1=on
 
 static esp_err_t stream_handler(httpd_req_t *req){
     camera_fb_t * fb = NULL;
@@ -315,40 +318,42 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         Serial.write(txdata,4);
     }
 
-// ====== BLOWER CONTROL ======
-    if(!strcmp(variable,"blower")){
-        if(val==1){
-            if(actuatorState != 0){ // stop actuator first
-                actuatorState=0;
-                txdata[1]=Actuator_up; txdata[2]=0; Serial.write(txdata,4); Serial.println("Actuator STOP due to blower ON");
-            }
-            blowerState=1;
-            txdata[1]=blower_fan; txdata[2]=1; Serial.write(txdata,4); Serial.println("Blower ON");
-        } else {
-            blowerState=0;
-            txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF");
-        }
+        // ===== BLOWER FAN =====
+    else if(!strcmp(variable, "blower"))
+{
+    txdata[1] = blower_fan;
+
+    if(val == 1){             
+        txdata[2] = Blower_ON_Value;
+        Serial.write(txdata, 4);
+        Serial.println("Blower On");
     }
-    // ====== ACTUATOR CONTROL ======
-    else if(!strcmp(variable,"actuator")){
-        if(val==1){ // deploy
-            if(blowerState==1){ // stop blower first
-                blowerState=0;
-                txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF due to actuator");
-            }
-            actuatorState=1;
-            txdata[1]=Actuator_up; txdata[2]=1; Serial.write(txdata,4); Serial.println("Actuator UP");
-        }
-        else if(val==2){ // retract
-            if(blowerState==1){ blowerState=0; txdata[1]=blower_fan; txdata[2]=0; Serial.write(txdata,4); Serial.println("Blower OFF due to actuator"); }
-            actuatorState=2;
-            txdata[1]=Actuator_down; txdata[2]=1; Serial.write(txdata,4); Serial.println("Actuator DOWN");
-        }
-        else if(val==0){ // stop
-            txdata[1]=Actuator_up; txdata[2]=0; Serial.write(txdata,4); Serial.println("Actuator STOP");
-            actuatorState=0;
-        }
+    else if(val == 0){
+        txdata[2] = Blower_OFF_Value;
+        Serial.write(txdata, 4);
+        Serial.println("Blower Off");
     }
+}
+
+    else if(!strcmp(variable, "actuator"))
+{
+    if(val == 1){ // UP
+        txdata[1] = Actuator_up;
+        txdata[2] = 1;
+        Serial.write(txdata, 4);
+    }
+    else if(val == 2){ // DOWN
+        txdata[1] = Actuator_down;
+        txdata[2] = 1;
+        Serial.write(txdata, 4);
+    }
+    else if(val == 0){ // STOP
+        txdata[1] = Actuator_up;
+        txdata[2] = Actuator_Stop_Value;
+        Serial.write(txdata, 4);
+    }
+}
+
 
 
 
@@ -720,7 +725,6 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 
         <div class="cont_flex_model">     
             <button type="button" id="model3" onmousedown="fetch(document.location.origin+'/control?var=model&val=3');">Object Following</button>
-            <li><a class="active" href="/camera_detection">Camera Detection</a></li>
             <button type="button" id="model4" onmousedown="fetch(document.location.origin+'/control?var=model&val=4');">Line Tracing</button>
         </div>
 
@@ -733,11 +737,11 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         
 
         <div class="cont_flex">  
-            <div style="display: flex;align-items: center;">Tilt <input type="range" id="tilt" min="30" max="180" value="90" onchange="try{fetch(document.location.origin+'/control?var=tilt&val='+this.value);}catch(e){}"></div>
+            <div style="display: flex;align-items: center;">Tilt <input type="range" id="tilt" min="0" max="180" value="90" onchange="try{fetch(document.location.origin+'/control?var=tilt&val='+this.value);}catch(e){}"></div>
         </div>
 
          <div class="cont_flex">  
-            <div style="display: flex;align-items: center;">dolly <input type="range" id="dolly" min="30" max="180" value="90" onchange="try{fetch(document.location.origin+'/control?var=dolly&val='+this.value);}catch(e){}"></div>
+            <div style="display: flex;align-items: center;">dolly <input type="range" id="dolly" min="0" max="180" value="90" onchange="try{fetch(document.location.origin+'/control?var=dolly&val='+this.value);}catch(e){}"></div>
         </div>
 
         <!-- ====== DOLLY CONTROL ====== -->
@@ -756,9 +760,13 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <!-- ====== BLOWER FAN CONTROL ====== -->
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
-                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=1');}catch(e){}">Turn ON</button>
-                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=0');}catch(e){}">Turn ON</button>
+            <button onclick="fetch('/control?var=blower&val=1')"
+                style="width:120px;height:40px;background:#44c767;">Turn ON</button>
+
+            <button onclick="fetch('/control?var=blower&val=0')"
+                style="width:120px;height:40px;background:#e94a4a;">Turn OFF</button>
         </div>
+
 
 
         <!-- ACTUATOR -->
@@ -769,7 +777,6 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=actuator&val=2');}catch(e){}">RETRACT</button>
             </div>
         </div>
-
 
 
         
@@ -816,20 +823,42 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
                 ctx.clearRect(50,85,100,20);
 
                 let actuatorState = 0; // 0=stop, 1=deploy, 2=retract
-                let blowerState = 0;
 
 function toggleActuator(command){
-    if(actuatorState===command){ actuatorState=0; fetch(`/control?var=actuator&val=0`); console.log("Actuator STOP"); return;}
-    if(blowerState===1){ blowerState=0; fetch(`/control?var=blower&val=0`); console.log("Blower OFF due to actuator");}
-    actuatorState=command;
+    
+    // If same command pressed again → STOP
+    if (actuatorState === command) {
+        actuatorState = 0;
+        fetch(`/control?var=actuator&val=0`);
+        console.log("Actuator STOP");
+        return;
+    }
+
+    // Otherwise send new command
+    actuatorState = command;
     fetch(`/control?var=actuator&val=${command}`);
+
+    if(command === 1) console.log("Actuator DEPLOY");
+    if(command === 2) console.log("Actuator RETRACT");
 }
 
+
 function toggleBlower(command){
-    if(blowerState===command){ blowerState=0; fetch(`/control?var=blower&val=0`); console.log("Blower STOP"); return;}
-    if(actuatorState!==0){ actuatorState=0; fetch(`/control?var=actuator&val=0`); console.log("Actuator STOP due to blower");}
-    blowerState=command;
+    
+    // If same command pressed again → STOP
+    if (blowerState === command) {
+        blowerState = 0;
+        fetch(`/control?var=blower&val=0`);
+        console.log("Actuator STOP");
+        return;
+    }
+
+    // Otherwise send new command
+    blowerState = command;
     fetch(`/control?var=blower&val=${command}`);
+
+    if(command === 1) console.log("Blower On");
+    if(command === 2) console.log("Blower Off");
 }
 
 // PAN & TILT SLIDERS
