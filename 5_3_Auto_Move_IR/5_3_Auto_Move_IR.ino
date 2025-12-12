@@ -90,8 +90,8 @@ void loop() {
     stopMove();
     delay(200);
 
-    turnRight();
-    delay(400);
+    // turnRight();
+    // delay(400);
 
     stopMove();
   }
