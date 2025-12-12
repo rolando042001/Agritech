@@ -318,20 +318,22 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         Serial.write(txdata,4);
     }
 
-// ===== BLOWER FAN =====
 else if(!strcmp(variable, "blower"))
 {
-    txdata[1] = blower_fan; 
+    txdata[0] = 0xAB;
+    txdata[3] = 0xFF;
 
-    if(val == 16){         // ON
-        txdata[2] = 1;
+    if(val == 1) {
+        txdata[1] = blower_fan;      // Command ID
+        txdata[2] = Blower_ON_Value; // Payload
         Serial.write(txdata, 4);
-        Serial.println("Blower ON");
+        Serial.println("Blower ON Command Sent");
     }
-    else if(val == 0){     // OFF
-        txdata[2] = 0;
+    else if(val == 0) {
+        txdata[1] = blower_fan;        // Command ID
+        txdata[2] = Blower_OFF_Value;  // Payload
         Serial.write(txdata, 4);
-        Serial.println("Blower OFF");
+        Serial.println("Blower OFF Command Sent");
     }
 }
 
@@ -760,7 +762,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <!-- ====== BLOWER FAN CONTROL ====== -->
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
-                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=16');}catch(e){}">Turn ON</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=1');}catch(e){}">Turn ON</button>
                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=0');}catch(e){}">Turn Off</button>
         </div>
 

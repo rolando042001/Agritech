@@ -457,22 +457,43 @@ void RXpack_func() {
            model_var = 6;
         }
 
-        // ===== ACTUATOR UP =====
         else if (Model == Actuator_up) {
-          digitalWrite(ACTUATOR_UP_PIN, HIGH);
-          digitalWrite(ACTUATOR_DOWN_PIN, LOW);
-        }
+  // ACTUATOR DEPLOY
+  digitalWrite(ACTUATOR_UP_PIN, LOW);
+  digitalWrite(ACTUATOR_DOWN_PIN, HIGH);
 
-        // ===== BLOWER FAN =====
-        else if (Model == Blower_fan) {
-          digitalWrite(BLOWER_FAN_PIN, LOW);
-        }
+  // ensure blower OFF
+  digitalWrite(BLOWER_FAN_PIN, HIGH);
+}
 
-        // ===== ACTUATOR DOWN =====
-        else if (Model == Actuator_down) {
-          digitalWrite(ACTUATOR_UP_PIN, LOW);
-          digitalWrite(ACTUATOR_DOWN_PIN, HIGH);
-        }
+else if (Model == Actuator_down) {
+  // ACTUATOR RETRACT
+  digitalWrite(ACTUATOR_UP_PIN, HIGH);
+  digitalWrite(ACTUATOR_DOWN_PIN, LOW);
+
+  // ensure blower OFF
+  digitalWrite(BLOWER_FAN_PIN, HIGH);
+}
+
+else if (Model == 0) {
+  // ACTUATOR STOP COMMAND
+  digitalWrite(ACTUATOR_UP_PIN, HIGH);
+  digitalWrite(ACTUATOR_DOWN_PIN, HIGH);
+}
+
+else if (Model == Blower_fan) {
+  // BLOWER ON
+  digitalWrite(BLOWER_FAN_PIN, LOW);
+
+  // FORCE ACTUATOR OFF
+  digitalWrite(ACTUATOR_UP_PIN, HIGH);
+  digitalWrite(ACTUATOR_DOWN_PIN, HIGH);
+}
+
+else if (Model == 228) {
+  // BLOWER OFF
+  digitalWrite(BLOWER_FAN_PIN, HIGH);
+}
       }
     }
   }
