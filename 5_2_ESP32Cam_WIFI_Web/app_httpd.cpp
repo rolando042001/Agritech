@@ -335,6 +335,20 @@ static esp_err_t cmd_handler(httpd_req_t *req)
     }
 }
 
+    else if(!strcmp(variable, "blower"))
+{
+    if(val == 16){ // UP
+        txdata[1] = blower_on;
+        txdata[2] = 1;
+        Serial.write(txdata, 4);
+    }
+    else if(val == 1){ // DOWN
+        txdata[1] = blower_off;
+        txdata[2] = 1;
+        Serial.write(txdata, 4);
+    }
+}
+
     else if(!strcmp(variable, "actuator"))
 {
     if(val == 1){ // UP
@@ -761,7 +775,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
         <h3 style="text-align:center;margin-top:20px;">Blower Fan</h3>
         <div class="cont_flex_threebuttom">
                 <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=16');}catch(e){}">Turn ON</button>
-                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=17');}catch(e){}">Turn Off</button>
+                <button style="margin-left:10px;" onclick="try{fetch(document.location.origin+'/control?var=blower&val=1');}catch(e){}">Turn Off</button>
         </div>
 
 
@@ -855,8 +869,8 @@ function toggleBlower(command){
     blowerState = command;
     fetch(`/control?var=blower&val=${command}`);
 
-    if(command === 1) console.log("Blower On");
-    if(command === 2) console.log("Blower Off");
+    if(command === 16) console.log("Blower On");
+    if(command === 0) console.log("Blower Off");
 }
 
 // PAN & TILT SLIDERS
