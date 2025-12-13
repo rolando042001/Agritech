@@ -5,6 +5,9 @@
 
 #include "esp_camera.h"
 #include "RelayCommand.h"
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define I2C_SDA 15
 #define I2C_SCL 14
