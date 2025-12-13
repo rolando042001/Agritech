@@ -59,11 +59,11 @@ Servo PANservo;              // pan servo
 Servo DOLLYservo;            // dolly servo
 
 // ======= ACTUATOR PINS =======
-#define ACTUATOR_UP_PIN   A4   // extend
+#define ACTUATOR_UP_PIN   2   // extend
 #define ACTUATOR_DOWN_PIN A5   // retract
 
 // ======== BLOWER FAN PIN =======
-#define BLOWER_FAN_PIN 2 // Blower pin
+#define BLOWER_FAN_PIN A4 // Blower pin
 
 
 int speeds = 250;
