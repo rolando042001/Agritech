@@ -6,6 +6,16 @@
 #include "esp_camera.h"
 #include "RelayCommand.h"
 
+#define I2C_SDA 15
+#define I2C_SCL 14
+TwoWire I2Cbus = TwoWire(0);
+// Display defines
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &I2Cbus, OLED_RESET);
+
 // ================= UART =================
 #define UART_TX 13  // ESP32-CAM TX → Arduino RX
 #define UART_RX 14  // ESP32-CAM RX ← Arduino TX
@@ -106,7 +116,14 @@ void setup()
     }
 
     ei_printf("\nStarting continious inference in 2 seconds...\n");
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.print("Starting continious\n inference in\n 2 seconds...");
+    display.display();
     ei_sleep(2000);
+    display.clearDisplay();
 }
 
 /**
@@ -201,9 +218,28 @@ for (uint32_t i = 0; i < result.bounding_boxes_count; i++) {
             bb.width,
             bb.height);
 
+    display.setCursor(0, 20 * ix);
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.print(bb.label);
+    display.print("-");
+    display.print(int((bb.value)*100));
+    display.print("%");
+    display.display();
+
     // Check confidence >= 80%
     if (bb.value >= 0.80) {
         objectDetected = true;
+
+        
+    display.setCursor(0, 20 * ix);
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.print(bb.label);
+    display.print("-");
+    display.print(int((bb.value)*100));
+    display.print("%");
+    display.display();
     }
 }
 
@@ -215,6 +251,11 @@ if (objectDetected) {
     delay(3000);
     relayOff(); // Relay OFF
     Serial.println("Relay OFF - No valid detection");
+    display.setCursor(0, 16);
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.print("No objects  found");
+    display.display();
 }
 
 #endif
